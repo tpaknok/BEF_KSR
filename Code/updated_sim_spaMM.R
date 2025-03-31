@@ -1,114 +1,202 @@
 library(phytools)
 library(tidyverse)
-library(CPR)
+library(EcoCoMix)
 library(ape)
 
-setwd("C:/Users/pakno/OneDrive - University of Toronto/BEF_KSR")
-data(KSR)
-data(KSR_MLtree)
-data(KSR_EF)
-
-VCV_sp <- vcv(KSR_MLtree)
-head(VCV_sp)
-
-#comm <- KSR/rowSums(KSR)
-spaMM_formula <-  y~x+corrMatrix(1|comp_id)
-
-###
-result_summary <- list()
-
-time1 <- Sys.time()
-lambda_true <- c(0,0.5,1)
-nspp <- 40
+### Simulations
+set.seed(123)
+nspp <- c(28,14,42,56)
 sim <- 500
-b1 <- 0.5
-  for (i in 1:3) {
-    set.seed(999)
+b1 <- c(0,0.25)
+lambda_true <- runif(sim)
 
-    message(i)
-    # result <- lapply(1:500,function(x) {message(x)
-    #   BEF_simulate(comm = NULL,
-    #                VCV_sp = NULL,
-    #                scale=1,
-    #                nspp=50,
-    #                nsite=88,
-    #                min_richness=1,
-    #                max_richness=15,
-    #                spaMM_formula=spaMM_formula,
-    #                b1=0,
-    #                signals_X="phy_cor",
-    #                signals_Y = T,
-    #                intercept = 0,
-    #                y_mean = 0,
-    #                y_sd = 1,
-    #                x_mean=0,
-    #                x_sd = 1,
-    #                noise_mean = 0,
-    #                noise_sd = 1,
-    #                lambda_true= lambda_true[[i]])
-    #   }
-    #   )
+count <- 1
 
-    result <- list()
-    for (j in 1:sim) {
-      message(j," ",nspp)
-      result[[j]] <- BEF_simulate(comm = NULL,
-                                  VCV_sp = NULL,
-                                  scale=1,
-                                  nspp=nspp,
-                                  nsite=88,
-                                  min_richness=1,
-                                  max_richness= 4,
-                                  spaMM_formula=spaMM_formula,
-                                  b1=b1,
-                                  signals_X="phy_cor",
-                                  signals_Y = T,
-                                  intercept = 0,
-                                  y_mean = 0,
-                                  y_sd = 1,
-                                  x_mean=0,
-                                  x_sd = 1,
-                                  noise_mean = 0,
-                                  noise_sd = 1,
-                                  lambda_true= lambda_true[[i]])
+result_df <- NULL
 
+spaMM_formula <-  y~x1+corrMatrix(1|comp_id)
+
+for (k in 1:length(b1)) { # a for loop for simulations based on different scenarios
+  for (i in 1:length(nspp)) {
+      for (l in 1:sim) {
+
+        message("sim_",l,"_",nspp[[i]],"_",b1[[k]])
+
+        result  <- tryCatch(BEF_simulate(comm = NULL,
+                                         VCV_sp = NULL,
+                                         nspp=nspp[[i]],
+                                         nsite=88,
+                                         min_richness=1,
+                                         max_richness= 4,
+                                         spaMM_formula=spaMM_formula,
+                                         b1=b1[[k]],
+                                         signals_X="sr",
+                                         noise_mean = 0,
+                                         noise_sd = 0.01,
+                                         lambda_true= lambda_true[[l]],
+                                         conv_fail_drop = T,
+                                         scale_all=F,
+                                         optim.lambda=T,
+                                         init=list(),
+                                         int_model=F,
+                                         method.spaMM = "REML",
+                                         control.optim=list(factr=1e12)),
+                            error = function(e) e)
+
+        result_df <- rbind(result,result_df)
+
+        print(result_df %>%
+           dplyr::select(b1,nspp,m_optim_sig,m_true_sig,m_original_sig,m_best_sig,m_without_comp_sig) %>%
+           pivot_longer(!b1:nspp,names_to="sig") %>%
+           group_by(b1,nspp,sig) %>%
+           summarize(sig_count = sum(value)))
+
+        count <- count+1
+        print(count)
+        }
+      }
     }
 
-    result <- do.call(rbind,result)
-    file_name <- paste0("result_summary",lambda_true[[i]],"_",nspp,"_b1_",b1)
-    assign(file_name,result)
-  }
-time2 <- Sys.time()
-time2-time1
-###
+all_result <- as.data.frame(do.call(rbind,result))
 
-result_summary <- list()
-lambda_true = c(0,0.5,1)
-for (i in 1:3) {
-  result_summary_2 <- list()
-  set.seed(9999)
+summary_stat <- result_df %>%
+  dplyr::select(b1,nspp,m_optim_sig,m_true_sig,m_original_sig,m_best_sig,m_without_comp_sig) %>%
+  pivot_longer(!b1:nspp,names_to="Model") %>%
+  group_by(b1,nspp,Model) %>%
+  summarize(sig_count = sum(value)/sim)
 
-  message(i)
-  result <- lapply(1:1000,function(x) {message(x)
-    BEF_simulate(comm = comm,
-                 VCV_sp = NULL,
-                 scale=1,
-                 spaMM_formula,
-                 b1=0.5,
-                 signals_X="phy_cor",
-                 signals_Y = T,
-                 intercept = 0,
-                 y_mean = 0,
-                 y_sd = 1,
-                 x_mean=0,
-                 x_sd = 1,
-                 noise_mean = 0,
-                 noise_sd = 1,
-                 lambda_true= lambda_true[[i]])
-  })
-  result_summary[[i]] <- BEF_simulate_eval(result)
-  result_summary_2 <- result_summary[[i]]
-  save(result_summary_2,file=paste0("Sim_result/spaMM_eval_lambda_",lambda_true[[i]],"_2.Rdata"))
-  remove(result_summary_2)
+### Making fig 1
+typeI_df <- summary_stat %>%
+  filter(b1 == 0 & Model != "m_best_sig") %>%
+  mutate(Model = fct_recode(Model,
+                            "True model" = "m_true_sig" ,
+                            "Brownian motion" = "m_original_sig" ,
+                            "Optimized model" = "m_optim_sig" ,
+                            "Linear regression" = "m_without_comp_sig")
+  ) %>%
+  mutate(Model = fct_relevel(Model,"True model","Optimized model","Brownian motion","Linear regression"))
 
-}
+p_typeI <- ggplot(typeI_df,aes(y=sig_count*100,x=nspp))+
+  geom_hline(yintercept=5)+
+  geom_line(aes(group=Model,colour=Model))+
+  ylab("Type I error (%)")+
+  xlab("Species pool size")+
+  scale_x_continuous(breaks=c(14,28,42,56))+
+  geom_point(aes(group=Model,colour=Model))+
+  scale_colour_manual(values=c("#009E73","#CC79A7","#E69F00","#0072B2"))+
+  annotate("text",x=-Inf,y=Inf,label="(A)",hjust=-0.25,vjust=1.2,size=5.5)+
+  ylim(0,78)+
+  theme_bw()+
+  theme(axis.text = element_text(size=12),
+        axis.title = element_text(size=12),
+        legend.position="bottom",
+        legend.text = element_text(size=12),
+        legend.title = element_text(size=12),
+        strip.text = element_text(size=12))
+
+plot(p_typeI)
+
+power_df <- summary_stat %>%
+  filter(b1 == 0.25 & Model != "m_best_sig") %>%
+  mutate(Model = fct_recode(Model,
+                            "True model" = "m_true_sig" ,
+                            "Brownian motion" = "m_original_sig" ,
+                            "Optimized model" = "m_optim_sig" ,
+                            "Linear regression" = "m_without_comp_sig")
+  ) %>%
+  mutate(Model = fct_relevel(Model,"True model","Optimized model","Brownian motion","Linear regression"))
+
+p_power <- ggplot(power_df,aes(y=sig_count*100,x=nspp))+
+  geom_hline(yintercept = 80)+
+  geom_line(aes(group=Model,colour=Model))+
+  ylab("Power (%)")+
+  xlab("")+
+  scale_x_continuous(breaks=c(14,28,42,56))+
+  geom_point(aes(group=Model,colour=Model))+
+  scale_colour_manual(values=c("#009E73","#CC79A7","#E69F00","#0072B2"))+
+  annotate("text",x=-Inf,y=Inf,label="(B)",hjust=-0.25,vjust=1.2,size=5.5)+
+  ylim(75,105)+
+  theme_bw()+
+  theme(axis.text = element_text(size=12),
+        axis.title = element_text(size=12),
+        legend.position="bottom",
+        legend.text = element_text(size=12),
+        legend.title = element_text(size=12),
+        strip.text = element_text(size=12))
+
+plot(p_power)
+
+coef_df_b1_0 <- result_df %>%
+  dplyr::select(b1,nspp,m_optim_slope,m_true_slope,m_original_slope,m_best_slope,m_without_comp_slope) %>%
+  pivot_longer(!b1:nspp,names_to="Model") %>%
+  filter(b1 == 0 & Model != "m_best_slope") %>%
+  mutate(Model = fct_recode(Model,
+                            "True model" = "m_true_slope" ,
+                            "Brownian motion" = "m_original_slope" ,
+                            "Optimized model" = "m_optim_slope" ,
+                            "Linear regression" = "m_without_comp_slope")
+  ) %>%
+  mutate(Model = fct_relevel(Model,"True model","Optimized model","Brownian motion","Linear regression"))
+
+library(see)
+
+p_coef_b1_0 <- ggplot(coef_df_b1_0,aes(y=value,x=nspp))+
+  geom_hline(yintercept = 0)+
+  geom_violinhalf(aes(group=interaction(Model,nspp),fill=Model),position=position_dodge(width=4),scale="width",
+                  linewidth=0.2)+
+  scale_x_continuous(breaks=c(14,28,42,56))+
+  scale_fill_manual(values=c("#009E73","#CC79A7","#E69F00","#0072B2"))+
+  annotate("text",x=-Inf,y=Inf,label="(C)",hjust=-0.25,vjust=1.2,size=5.5)+
+  ylab(bquote(β[SR]~estimates))+
+  xlab("")+
+  theme_bw()+
+  theme(axis.text = element_text(size=12),
+        axis.title = element_text(size=12),
+        legend.position="bottom",
+        legend.text = element_text(size=12),
+        legend.title = element_text(size=12),
+        strip.text = element_text(size=12))
+
+plot(p_coef_b1_0)
+
+coef_df_b1_0.25 <- result_df %>%
+  dplyr::select(b1,nspp,m_optim_slope,m_true_slope,m_original_slope,m_best_slope,m_without_comp_slope) %>%
+  pivot_longer(!b1:nspp,names_to="Model") %>%
+  filter(b1 == 0.25 & Model != "m_best_slope") %>%
+  mutate(Model = fct_recode(Model,
+                            "True model" = "m_true_slope" ,
+                            "Brownian motion" = "m_original_slope" ,
+                            "Optimized model" = "m_optim_slope" ,
+                            "Linear regression" = "m_without_comp_slope")
+  ) %>%
+  mutate(Model = fct_relevel(Model,"True model","Optimized model","Brownian motion","Linear regression"))
+
+library(see)
+
+p_coef_b1_0.25 <- ggplot(coef_df_b1_0.25,aes(y=value,x=nspp))+
+  geom_hline(yintercept = 0.25)+
+  geom_violinhalf(aes(group=interaction(Model,nspp),fill=Model),position=position_dodge(width=6),scale="width",
+                  linewidth=0.2)+
+  scale_x_continuous(breaks=c(14,28,42,56))+
+  scale_fill_manual(values=c("#009E73","#CC79A7","#E69F00","#0072B2"))+
+  annotate("text",x=-Inf,y=Inf,label="(D)",hjust=-0.25,vjust=1.2,size=5.5)+
+  ylab(bquote(β[SR]~estimates))+
+  xlab("")+
+  labs(color="Model",
+       fill="Model")+
+  theme_bw()+
+  theme(axis.text = element_text(size=12),
+        axis.title = element_text(size=12),
+        legend.position="bottom",
+        legend.text = element_text(size=12),
+        legend.title = element_text(size=12),
+        strip.text = element_text(size=12))
+
+plot(p_coef_b1_0.25)
+
+library(ggpubr)
+
+ggarrange(p_typeI,p_power,p_coef_b1_0,p_coef_b1_0.25,nrow=2,ncol=2,common.legend=T,legend="bottom")
+
+ggsave(("Figure/p_sim.tiff"),width=17,height=17,dpi=600,units="cm",compression="lzw",bg="white")
+
