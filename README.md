@@ -6,6 +6,8 @@
 This repository contains all the scripts required to reproduce results
 in the manuscript **Species overlap and phylogenetic relatedness result
 in community statistical non-independence (and what to do about it)**.
+If you are interested in using EcoCoMix, please visit the
+[webiste](https://tpaknok.github.io/EcoCoMix/articles/Empirical_single.html)
 
 # Code
 

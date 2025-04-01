@@ -1,8 +1,10 @@
+###This is the code for reproducing the results in the manuscript
+### For general usage, see the website of EcoCoMix https://tpaknok.github.io/EcoCoMix/articles/Empirical_single.html
+
 library(phytools)
 library(tidyverse)
 library(EcoCoMix)
 library(ape)
-library(DHARMa)
 
 data(KSR)
 data(KSR_MLtree)
@@ -41,7 +43,6 @@ KSR_EF$log_bug_rich <- log(KSR_EF$bug.rich+1)
 KSR_EF$log_poll_total <- log(KSR_EF$poll_total+1)
 
 ### a for loop to analyze all functions
-
 resp <- c("litter2012","ave.biomass","LAI","mean.N.change","log_poll_total","log_flwr_total",
                   "Mass.loss.2month","Damage_effect","log_bugs","log_bug_rich")
 
@@ -61,16 +62,16 @@ for (i in 1:10) {
   m_lm_sr <- lm(y~Real.rich,data=KSR_EF) #do a linear regression for comparison
 
   result <- data.frame(MM_p_sr=ifelse(length(ranef(m_sr$best_model)) == 0,
-                                      m_sr$best_model_satt[,5],
+                                      m_sr$best_model_satt[,5], #satterthwaite's method p value in best_model_satt
                                       m_sr$best_model_satt[,6]),
-                       without_re_p_sr = m_sr$without_comp_anova[1,5],
+                       without_re_p_sr = m_sr$without_comp_anova[1,5], #without compositional random effect
                        AIC_diff_sr = m_sr$AIC[[1]]-m_sr$AIC[[3]],
                        R2m_sr = ifelse(length(ranef(m_sr$best_model)) == 0, NA, get_R2(m_sr$best_model)[[1]]),
                        R2c_sr = ifelse(length(ranef(m_sr$best_model)) == 0, NA, get_R2(m_sr$best_model)[[2]]),
                        R2_sr_lm = summary(m_lm_sr)$r.sq,
-                       optim_lambda_full_sr = m_sr$optimized_lambda,
-                       optim_lambda_int = m_sr$optimized_lambda_int,
-                       resp=resp[[i]]) #extract all relevant results
+                       optim_lambda_full_sr = m_sr$optimized_lambda, # lambda of full model
+                       optim_lambda_int = m_sr$optimized_lambda_int, #lambda of intercept-only model
+                       resp=resp[[i]])
 
   result_df <- rbind(result_df,result)
 
@@ -213,7 +214,12 @@ m_log_bugs$AIC[[7]]-m_log_bugs$AIC[[6]]
 m_log_poll_total$AIC[[7]]-m_log_poll_total$AIC[[6]]
 m_log_flwr_total$AIC[[7]]-m_log_flwr_total$AIC[[6]]
 
-###
+### Table S1
+
+#As an example, summary(m_ave.biomass$optimized_lambda_model,verbose=F)$beta_table[2,1:2] extract the slope and SE
+#as.data.frame(m_ave.biomass$optimized_lambda_model_satt)[5:6] extract the Satterwaite's method p-value and F-value
+#Then get the R2 (for lm) or R2m and R2c for mixed model
+#Finally, the lambda (based on intercept-only mixed model) and the cAIC of each model.
 table_df <- list(c("Biomass",summary(m_ave.biomass$optimized_lambda_model,verbose=F)$beta_table[2,1:2],as.data.frame(m_ave.biomass$optimized_lambda_model_satt)[5:6],NA,get_R2(m_ave.biomass$optimized_lambda_model)[[1]],get_R2(m_ave.biomass$optimized_lambda_model)[[2]],m_ave.biomass$optimized_lambda_int,m_ave.biomass$AIC[[3]]),
                  c("Biomass",summary(m_ave.biomass$without_comp_model,verbose=F)$beta_table[2,1:2],as.data.frame(m_ave.biomass$without_comp_anova)[1,4:5],get_R2(m_ave.biomass$without_comp_model)[[1]],NA,NA,NA,m_ave.biomass$AIC[[1]]),
                  c("LAI",summary(m_LAI$optimized_lambda_model,verbose=F)$beta_table[2,1:2],as.data.frame(m_LAI$optimized_lambda_model_satt)[5:6],NA,get_R2(m_LAI$optimized_lambda_model)[[1]],get_R2(m_LAI$optimized_lambda_model)[[2]],m_LAI$optimized_lambda_int,m_LAI$AIC[[3]]),
