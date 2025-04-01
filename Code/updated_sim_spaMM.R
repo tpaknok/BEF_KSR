@@ -3,22 +3,24 @@ library(tidyverse)
 library(EcoCoMix)
 library(ape)
 
-### Simulations
+### Simulations - Initial settings
 set.seed(123)
 nspp <- c(28,14,42,56)
 sim <- 500
 b1 <- c(0,0.25)
 lambda_true <- runif(sim)
 
-count <- 1
+count <- 1 #number of iterations conducted (for checking progress)
 
 result_df <- NULL
 
 spaMM_formula <-  y~x1+corrMatrix(1|comp_id)
 
-for (k in 1:length(b1)) { # a for loop for simulations based on different scenarios
-  for (i in 1:length(nspp)) {
-      for (l in 1:sim) {
+### a for loop for simulations based on different scenarios
+
+for (k in 1:length(b1)) { #slope
+  for (i in 1:length(nspp)) { #species pool size
+      for (l in 1:sim) { #number of simulations
 
         message("sim_",l,"_",nspp[[i]],"_",b1[[k]])
 
@@ -30,12 +32,12 @@ for (k in 1:length(b1)) { # a for loop for simulations based on different scenar
                                          max_richness= 4,
                                          spaMM_formula=spaMM_formula,
                                          b1=b1[[k]],
-                                         signals_X="sr",
+                                         signals_X="sr", #species richness as the predictor
                                          noise_mean = 0,
                                          noise_sd = 0.01,
                                          lambda_true= lambda_true[[l]],
-                                         conv_fail_drop = T,
-                                         scale_all=F,
+                                         conv_fail_drop = T, #drop runs with failed convergence
+                                         scale_all=F, #no need to scale the predictor
                                          optim.lambda=T,
                                          init=list(),
                                          int_model=F,
@@ -49,7 +51,7 @@ for (k in 1:length(b1)) { # a for loop for simulations based on different scenar
            dplyr::select(b1,nspp,m_optim_sig,m_true_sig,m_original_sig,m_best_sig,m_without_comp_sig) %>%
            pivot_longer(!b1:nspp,names_to="sig") %>%
            group_by(b1,nspp,sig) %>%
-           summarize(sig_count = sum(value)))
+           summarize(sig_count = sum(value))) #summarize the results
 
         count <- count+1
         print(count)

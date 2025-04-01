@@ -3,11 +3,12 @@ library(tidyverse)
 library(EcoCoMix)
 library(ape)
 library(DHARMa)
-setwd("C:/Users/pakno/OneDrive - University of Toronto/BEF_KSR")
+
 data(KSR)
 data(KSR_MLtree)
 data(KSR_EF)
 
+### a function to get prediction from spaMM models
 get_predictions <- function(object) {
   newdata <- data.frame(Real.rich=unique(object$best_model$data$Real.rich))
   predict_with_phylo <- predict(object$best_model,newdata=newdata,re.form=NA,variances=list(fixefVar=TRUE),intervals="fixefVar",binding="Response")
@@ -30,7 +31,7 @@ get_predictions <- function(object) {
   predict_df <- rbind(predict_with_phylo,predict_without_phylo)
 }
 
-###
+### get the phylogenetic vcv matrix
 KSR_EF$mpd <- picante::mpd(KSR,cophenetic(KSR_MLtree))
 KSR_EF[is.na(KSR_EF$mpd),"mpd"] <- 0
 
@@ -39,7 +40,7 @@ KSR_EF$log_flwr_total <- log(KSR_EF$flwr_total+1)
 KSR_EF$log_bug_rich <- log(KSR_EF$bug.rich+1)
 KSR_EF$log_poll_total <- log(KSR_EF$poll_total+1)
 
-###
+### a for loop to analyze all functions
 
 resp <- c("litter2012","ave.biomass","LAI","mean.N.change","log_poll_total","log_flwr_total",
                   "Mass.loss.2month","Damage_effect","log_bugs","log_bug_rich")
@@ -57,7 +58,7 @@ for (i in 1:10) {
 
   assign(paste0("m_",resp[[i]]),m_sr)
 
-  m_lm_sr <- lm(y~Real.rich,data=KSR_EF)
+  m_lm_sr <- lm(y~Real.rich,data=KSR_EF) #do a linear regression for comparison
 
   result <- data.frame(MM_p_sr=ifelse(length(ranef(m_sr$best_model)) == 0,
                                       m_sr$best_model_satt[,5],
@@ -69,18 +70,14 @@ for (i in 1:10) {
                        R2_sr_lm = summary(m_lm_sr)$r.sq,
                        optim_lambda_full_sr = m_sr$optimized_lambda,
                        optim_lambda_int = m_sr$optimized_lambda_int,
-                       resp=resp[[i]])
+                       resp=resp[[i]]) #extract all relevant results
 
   result_df <- rbind(result_df,result)
 
   predict_df_sr <- rbind(predict_df_sr,cbind(get_predictions(m_sr),resp=resp[[i]]))
 }
 
-###
-sr_mod_change <- (p.adjust(result_df[,1],"fdr") < 0.05) - (p.adjust(result_df[,2],"fdr") < 0.05)
-names(sr_mod_change) <- result_df$resp
-
-###
+### Visualize the results
 predict_df <- predict_df_sr %>%
   mutate(Name = as.factor(resp)) %>%
   mutate(Name = fct_recode(Name,
