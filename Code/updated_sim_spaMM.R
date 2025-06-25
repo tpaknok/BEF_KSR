@@ -5,7 +5,7 @@ library(ape)
 
 ### Simulations - Initial settings
 set.seed(123)
-nspp <- c(28,14,42,56)
+nspp <- c(14,28,42,56)
 sim <- 500
 b1 <- c(0,0.25)
 lambda_true <- runif(sim)
@@ -67,6 +67,13 @@ summary_stat <- result_df %>%
   group_by(b1,nspp,Model) %>%
   summarize(sig_count = sum(value)/sim)
 
+
+type1_df <- result_df %>%
+  filter(b1==0) %>%
+  mutate(lambda_diff = true_lambda-optim_lambda) %>%
+  group_by(m_true_sig, m_optim_sig) %>%
+  summarize(diff_lambda = mean(abs(lambda_diff)))
+
 ### Making fig 1
 typeI_df <- summary_stat %>%
   filter(b1 == 0 & Model != "m_best_sig") %>%
@@ -87,7 +94,7 @@ p_typeI <- ggplot(typeI_df,aes(y=sig_count*100,x=nspp))+
   geom_point(aes(group=Model,colour=Model))+
   scale_colour_manual(values=c("#009E73","#CC79A7","#E69F00","#0072B2"))+
   annotate("text",x=-Inf,y=Inf,label="(A)",hjust=-0.25,vjust=1.2,size=5.5)+
-  ylim(0,78)+
+  ylim(0,85)+
   theme_bw()+
   theme(axis.text = element_text(size=12),
         axis.title = element_text(size=12),
@@ -142,15 +149,20 @@ coef_df_b1_0 <- result_df %>%
 
 library(see)
 
-p_coef_b1_0 <- ggplot(coef_df_b1_0,aes(y=value,x=nspp))+
-  geom_hline(yintercept = 0)+
-  geom_violinhalf(aes(group=interaction(Model,nspp),fill=Model),position=position_dodge(width=4),scale="width",
-                  linewidth=0.2)+
-  scale_x_continuous(breaks=c(14,28,42,56))+
-  scale_fill_manual(values=c("#009E73","#CC79A7","#E69F00","#0072B2"))+
-  annotate("text",x=-Inf,y=Inf,label="(C)",hjust=-0.25,vjust=1.2,size=5.5)+
-  ylab(bquote(β[SR]~estimates))+
+Error_df_b1_0 <- coef_df_b1_0 %>%
+  group_by(nspp,Model) %>%
+  summarize(rmse = sqrt(mean((value-b1)^2)),
+            me = mean(value-b1))
+
+p_ME_b1_0 <- ggplot(Error_df_b1_0,aes(y=me,x=nspp))+
+  geom_line(aes(group=Model,colour=Model))+
+  ylab("Bias (Mean Error)")+
   xlab("")+
+  scale_x_continuous(breaks=c(14,28,42,56))+
+  geom_point(aes(group=Model,colour=Model))+
+  scale_colour_manual(values=c("#009E73","#CC79A7","#E69F00","#0072B2"))+
+  annotate("text",x=-Inf,y=Inf,label="(C)",hjust=-0.25,vjust=1.2,size=5.5)+
+  ylim(-0.02,0.02)+
   theme_bw()+
   theme(axis.text = element_text(size=12),
         axis.title = element_text(size=12),
@@ -159,7 +171,22 @@ p_coef_b1_0 <- ggplot(coef_df_b1_0,aes(y=value,x=nspp))+
         legend.title = element_text(size=12),
         strip.text = element_text(size=12))
 
-plot(p_coef_b1_0)
+p_RMSE_b1_0 <- ggplot(Error_df_b1_0,aes(y=rmse,x=nspp))+
+  geom_line(aes(group=Model,colour=Model))+
+  ylab("Accuracy (RMSE)")+
+  xlab("")+
+  scale_x_continuous(breaks=c(14,28,42,56))+
+  geom_point(aes(group=Model,colour=Model))+
+  scale_colour_manual(values=c("#009E73","#CC79A7","#E69F00","#0072B2"))+
+  annotate("text",x=-Inf,y=Inf,label="(E)",hjust=-0.25,vjust=1.2,size=5.5)+
+  theme_bw()+
+  ylim(0,0.15)+
+  theme(axis.text = element_text(size=12),
+        axis.title = element_text(size=12),
+        legend.position="bottom",
+        legend.text = element_text(size=12),
+        legend.title = element_text(size=12),
+        strip.text = element_text(size=12))
 
 coef_df_b1_0.25 <- result_df %>%
   dplyr::select(b1,nspp,m_optim_slope,m_true_slope,m_original_slope,m_best_slope,m_without_comp_slope) %>%
@@ -173,7 +200,78 @@ coef_df_b1_0.25 <- result_df %>%
   ) %>%
   mutate(Model = fct_relevel(Model,"True model","Optimized model","Brownian motion","Linear regression"))
 
+Error_df_b1_0.25 <- coef_df_b1_0.25 %>%
+  group_by(nspp,Model) %>%
+  summarize(rmse = sqrt(mean((value-b1)^2)),
+            me = mean(value-b1))
+
 library(see)
+
+p_ME_b1_0.25 <- ggplot(Error_df_b1_0.25,aes(y=me,x=nspp))+
+  geom_line(aes(group=Model,colour=Model))+
+  ylab("Bias (Mean Error)")+
+  xlab("")+
+  scale_x_continuous(breaks=c(14,28,42,56))+
+  geom_point(aes(group=Model,colour=Model))+
+  scale_colour_manual(values=c("#009E73","#CC79A7","#E69F00","#0072B2"))+
+  annotate("text",x=-Inf,y=Inf,label="(D)",hjust=-0.25,vjust=1.2,size=5.5)+
+  theme_bw()+
+  ylim(-0.02,0.02)+
+  theme(axis.text = element_text(size=12),
+        axis.title = element_text(size=12),
+        legend.position="bottom",
+        legend.text = element_text(size=12),
+        legend.title = element_text(size=12),
+        strip.text = element_text(size=12))
+
+p_RMSE_b1_0.25 <- ggplot(RMSE_df_b1_0.25,aes(y=rmse,x=nspp))+
+  geom_line(aes(group=Model,colour=Model))+
+  ylab("Accuracy (RMSE)")+
+  xlab("")+
+  scale_x_continuous(breaks=c(14,28,42,56))+
+  geom_point(aes(group=Model,colour=Model))+
+  scale_colour_manual(values=c("#009E73","#CC79A7","#E69F00","#0072B2"))+
+  annotate("text",x=-Inf,y=Inf,label="(F)",hjust=-0.25,vjust=1.2,size=5.5)+
+  theme_bw()+
+  ylim(0,0.15)+
+  theme(axis.text = element_text(size=12),
+        axis.title = element_text(size=12),
+        legend.position="bottom",
+        legend.text = element_text(size=12),
+        legend.title = element_text(size=12),
+        strip.text = element_text(size=12))
+
+plot(p_RMSE_b1_0.25)
+library(ggpubr)
+
+ggarrange(p_typeI,p_power,
+          p_ME_b1_0,p_ME_b1_0.25,
+          p_RMSE_b1_0,p_RMSE_b1_0.25,
+          nrow=3,ncol=2,common.legend=T,legend="bottom")
+
+ggsave(("Figure/p_sim.tiff"),width=17,height=17,dpi=600,units="cm",compression="lzw",bg="white")
+
+###
+library(see)
+
+p_coef_b1_0 <- ggplot(coef_df_b1_0,aes(y=value,x=nspp))+
+  geom_hline(yintercept = 0)+
+  geom_violinhalf(aes(group=interaction(Model,nspp),fill=Model),position=position_dodge(width=4),scale="width",
+                  linewidth=0.2)+
+  scale_x_continuous(breaks=c(14,28,42,56))+
+  scale_fill_manual(values=c("#009E73","#CC79A7","#E69F00","#0072B2"))+
+  annotate("text",x=-Inf,y=Inf,label="(A)",hjust=-0.25,vjust=1.2,size=5.5)+
+  ylab(bquote(β[SR]~estimates))+
+  xlab("")+
+  theme_bw()+
+  theme(axis.text = element_text(size=12),
+        axis.title = element_text(size=12),
+        legend.position="bottom",
+        legend.text = element_text(size=12),
+        legend.title = element_text(size=12),
+        strip.text = element_text(size=12))
+
+plot(p_coef_b1_0)
 
 p_coef_b1_0.25 <- ggplot(coef_df_b1_0.25,aes(y=value,x=nspp))+
   geom_hline(yintercept = 0.25)+
@@ -181,7 +279,7 @@ p_coef_b1_0.25 <- ggplot(coef_df_b1_0.25,aes(y=value,x=nspp))+
                   linewidth=0.2)+
   scale_x_continuous(breaks=c(14,28,42,56))+
   scale_fill_manual(values=c("#009E73","#CC79A7","#E69F00","#0072B2"))+
-  annotate("text",x=-Inf,y=Inf,label="(D)",hjust=-0.25,vjust=1.2,size=5.5)+
+  annotate("text",x=-Inf,y=Inf,label="(B)",hjust=-0.25,vjust=1.2,size=5.5)+
   ylab(bquote(β[SR]~estimates))+
   xlab("")+
   labs(color="Model",
@@ -196,9 +294,6 @@ p_coef_b1_0.25 <- ggplot(coef_df_b1_0.25,aes(y=value,x=nspp))+
 
 plot(p_coef_b1_0.25)
 
-library(ggpubr)
-
-ggarrange(p_typeI,p_power,p_coef_b1_0,p_coef_b1_0.25,nrow=2,ncol=2,common.legend=T,legend="bottom")
-
-ggsave(("Figure/p_sim.tiff"),width=17,height=17,dpi=600,units="cm",compression="lzw",bg="white")
+ggarrange(p_coef_b1_0,p_coef_b1_0.25,nrow=1,ncol=2,common.legend=T,legend="bottom")
+ggsave(("Figure/p_coef.tiff"),width=24,height=12,dpi=600,units="cm",compression="lzw",bg="white")
 
