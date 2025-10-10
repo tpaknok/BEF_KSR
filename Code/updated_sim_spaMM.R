@@ -69,13 +69,7 @@ summary_stat <- result_df %>%
   group_by(b1,nspp,Model) %>%
   summarize(sig_count = sum(value)/sim)
 
-# type1_df <- result_df %>%
-#   filter(b1==0) %>%
-#   mutate(lambda_diff = true_lambda-optim_lambda) %>%
-#   group_by(m_true_sig, m_optim_sig) %>%
-#   summarize(diff_lambda = mean(abs(lambda_diff)))
-
-### Making fig 1
+### Making fig 1 - subpanel for type-I error
 typeI_df <- summary_stat %>%
   filter(b1 == 0 & Model != "m_best_sig") %>%
   mutate(Model = fct_recode(Model,
@@ -106,6 +100,7 @@ p_typeI <- ggplot(typeI_df,aes(y=sig_count*100,x=nspp))+
 
 plot(p_typeI)
 
+### Making fig 1 - subpanel for power
 power_df <- summary_stat %>%
   filter(b1 == 0.25 & Model != "m_best_sig") %>%
   mutate(Model = fct_recode(Model,
@@ -136,6 +131,7 @@ p_power <- ggplot(power_df,aes(y=sig_count*100,x=nspp))+
 
 plot(p_power)
 
+### Making fig 1 - subpanel for rmse and me
 coef_df_b1_0 <- result_df %>%
   dplyr::select(b1,nspp,m_optim_slope,m_true_slope,m_original_slope,m_best_slope,m_without_comp_slope) %>%
   pivot_longer(!b1:nspp,names_to="Model") %>%
@@ -243,6 +239,8 @@ p_RMSE_b1_0.25 <- ggplot(Error_df_b1_0.25,aes(y=rmse,x=nspp))+
         strip.text = element_text(size=12))
 
 plot(p_RMSE_b1_0.25)
+
+###combining them into one figure
 library(ggpubr)
 
 ggarrange(p_typeI,p_power,
@@ -252,7 +250,7 @@ ggarrange(p_typeI,p_power,
 
 ggsave(("Figure/p_sim.tiff"),width=17,height=17,dpi=600,units="cm",compression="lzw",bg="white")
 
-###
+### visualizing coef estimates across simulations
 library(see)
 
 p_coef_b1_0 <- ggplot(coef_df_b1_0,aes(y=value,x=nspp))+
