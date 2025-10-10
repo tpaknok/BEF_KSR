@@ -16,7 +16,8 @@ result_df <- NULL
 
 spaMM_formula <-  y~x1+corrMatrix(1|comp_id)
 
-### a for loop for simulations based on different scenarios
+### a for loop for simulations based on different scenarios.
+### This one takes time! So an R object containing the simulation results (sim500.Rdata) has been provided. You can skip to L63 if you don't want to run the simulation.
 
 for (k in 1:length(b1)) { #slope
   for (i in 1:length(nspp)) { #species pool size
@@ -59,6 +60,7 @@ for (k in 1:length(b1)) { #slope
       }
     }
 
+### you can also load sim500.Rdata and then run the script below
 all_result <- as.data.frame(do.call(rbind,result))
 
 summary_stat <- result_df %>%
@@ -67,12 +69,11 @@ summary_stat <- result_df %>%
   group_by(b1,nspp,Model) %>%
   summarize(sig_count = sum(value)/sim)
 
-
-type1_df <- result_df %>%
-  filter(b1==0) %>%
-  mutate(lambda_diff = true_lambda-optim_lambda) %>%
-  group_by(m_true_sig, m_optim_sig) %>%
-  summarize(diff_lambda = mean(abs(lambda_diff)))
+# type1_df <- result_df %>%
+#   filter(b1==0) %>%
+#   mutate(lambda_diff = true_lambda-optim_lambda) %>%
+#   group_by(m_true_sig, m_optim_sig) %>%
+#   summarize(diff_lambda = mean(abs(lambda_diff)))
 
 ### Making fig 1
 typeI_df <- summary_stat %>%
@@ -224,7 +225,7 @@ p_ME_b1_0.25 <- ggplot(Error_df_b1_0.25,aes(y=me,x=nspp))+
         legend.title = element_text(size=12),
         strip.text = element_text(size=12))
 
-p_RMSE_b1_0.25 <- ggplot(RMSE_df_b1_0.25,aes(y=rmse,x=nspp))+
+p_RMSE_b1_0.25 <- ggplot(Error_df_b1_0.25,aes(y=rmse,x=nspp))+
   geom_line(aes(group=Model,colour=Model))+
   ylab("Accuracy (RMSE)")+
   xlab("")+
