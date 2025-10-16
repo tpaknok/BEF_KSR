@@ -1,10 +1,11 @@
-###This is the code for reproducing the results in the manuscript
+###This is the code for reproducing the results of the empirical analysis in the manuscript
 ### For general usage, see the website of EcoCoMix https://tpaknok.github.io/EcoCoMix/articles/Empirical_single.html
 
 library(phytools)
 library(tidyverse)
 library(EcoCoMix)
 library(ape)
+library(picante)
 
 data(KSR)
 data(KSR_MLtree)
@@ -59,7 +60,7 @@ for (i in 1:10) {
 
   assign(paste0("m_",resp[[i]]),m_sr)
 
-  m_lm_sr <- lm(y~Real.rich,data=KSR_EF) #do a linear regression for comparison
+  m_lm_sr <- lm(y~Real.rich,data=KSR_EF) #do a linear regression for comparison and extract r2
 
   result <- data.frame(MM_p_sr=ifelse(length(ranef(m_sr$best_model)) == 0,
                                       m_sr$best_model_satt[,5], #satterthwaite's method p value in best_model_satt
@@ -79,6 +80,8 @@ for (i in 1:10) {
 }
 
 ### Visualize the results
+dir.create("Figure")
+
 predict_df <- predict_df_sr %>%
   mutate(Name = as.factor(resp)) %>%
   mutate(Name = fct_recode(Name,
@@ -169,9 +172,11 @@ p_KSR_all <- ggplot(predict_df,aes(x=Real.rich,y=Response))+
         strip.text = element_text(size=11))
 plot(p_KSR_all)
 
-ggsave(("Figure/p_KSR_all.tiff"),width=18,height=18,dpi=600,units="cm",compression="lzw")
+ggsave(("./Figure/p_KSR_all.tiff"),width=18,height=18,dpi=600,units="cm",compression="lzw")
 
 ###
+dir.create("Table")
+
 c(m_LAI$optimized_lambda_int,
   m_litter2012$optimized_lambda_int,
   m_mean.N.change$optimized_lambda_int,
@@ -244,7 +249,7 @@ table_df <- list(c("Biomass",summary(m_ave.biomass$optimized_lambda_model,verbos
 
 table_df <- do.call(rbind,lapply(table_df,unlist))
 
-write.csv(table_df,"Table/table_df.csv")
+write.csv(table_df,"./Table/table_df.csv")
 
 ###
 

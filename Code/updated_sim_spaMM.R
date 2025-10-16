@@ -70,6 +70,8 @@ summary_stat <- result_df %>%
   summarize(sig_count = sum(value)/sim)
 
 ### Making fig 1 - subpanel for type-I error
+dir.create("Figure")
+
 typeI_df <- summary_stat %>%
   filter(b1 == 0 & Model != "m_best_sig") %>%
   mutate(Model = fct_recode(Model,
@@ -248,11 +250,9 @@ ggarrange(p_typeI,p_power,
           p_RMSE_b1_0,p_RMSE_b1_0.25,
           nrow=3,ncol=2,common.legend=T,legend="bottom")
 
-ggsave(("Figure/p_sim.tiff"),width=17,height=17,dpi=600,units="cm",compression="lzw",bg="white")
+ggsave(("./Figure/p_sim.tiff"),width=17,height=17,dpi=600,units="cm",compression="lzw",bg="white")
 
 ### visualizing coef estimates across simulations
-library(see)
-
 p_coef_b1_0 <- ggplot(coef_df_b1_0,aes(y=value,x=nspp))+
   geom_hline(yintercept = 0)+
   geom_violinhalf(aes(group=interaction(Model,nspp),fill=Model),position=position_dodge(width=4),scale="width",
@@ -281,8 +281,7 @@ p_coef_b1_0.25 <- ggplot(coef_df_b1_0.25,aes(y=value,x=nspp))+
   annotate("text",x=-Inf,y=Inf,label="(B)",hjust=-0.25,vjust=1.2,size=5.5)+
   ylab(bquote(β[SR]~estimates))+
   xlab("")+
-  labs(color="Model",
-       fill="Model")+
+  labs(fill="Model")+
   theme_bw()+
   theme(axis.text = element_text(size=12),
         axis.title = element_text(size=12),
@@ -294,5 +293,5 @@ p_coef_b1_0.25 <- ggplot(coef_df_b1_0.25,aes(y=value,x=nspp))+
 plot(p_coef_b1_0.25)
 
 ggarrange(p_coef_b1_0,p_coef_b1_0.25,nrow=1,ncol=2,common.legend=T,legend="bottom")
-ggsave(("Figure/p_coef.tiff"),width=24,height=12,dpi=600,units="cm",compression="lzw",bg="white")
+ggsave(("./Figure/p_coef.tiff"),width=24,height=12,dpi=600,units="cm",compression="lzw",bg="white")
 
