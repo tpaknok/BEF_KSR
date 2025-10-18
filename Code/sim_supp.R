@@ -5,6 +5,7 @@ library(phytools)
 library(tidyverse)
 library(EcoCoMix)
 library(ape)
+library(BBmisc)
 
 ### Simulations - Initial settings
 set.seed(123)
@@ -20,7 +21,7 @@ result_df <- NULL
 spaMM_formula <-  y~x1+corrMatrix(1|comp_id)
 
 ### a for loop for simulations based on different scenarios.
-### Skip to L75 if you want to load simSupp.RData directly
+### Skip to L76 if you want to load simSupp.RData directly
 
 for (k in 1:length(b1)) { #slope
   for (i in 1:length(nspp)) { #species pool size
@@ -72,7 +73,7 @@ for (k in 1:length(b1)) { #slope
 }
 
 ### this is for producing Table S1. You can directly load simSupp.RData and run the summary here
-#load("./Data/simSupp.RData") load the results directly
+#load("./Data/simSupp.RData") #load the results directly
 
 summary_stat <- result_df %>%
   dplyr::select(b1,nspp,m_optim_sig,m_true_sig,m_original_sig,m_best_sig,m_without_comp_sig) %>%

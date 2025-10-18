@@ -65,7 +65,7 @@ for (k in 1:length(b1)) { #slope
     }
 
 ### you can also load sim500.Rdata and then run the script below
-# load("./Data/sim500.RData") loading the result
+# load("./Data/sim500.RData") #loading the result
 all_result <- as.data.frame(do.call(rbind,result))
 
 summary_stat <- result_df %>%
