@@ -1,3 +1,6 @@
+### This script is for reproducing the simulation results described in the main text
+### Tsang, T. P. N. & Cadotte, M. W. (2025). Species overlap and phylogenetic relatedness result in community statistical non-independence (and what to do about it). Ecology Letters.
+
 library(phytools)
 library(tidyverse)
 library(EcoCoMix)
@@ -5,19 +8,20 @@ library(ape)
 
 ### Simulations - Initial settings
 set.seed(123)
-nspp <- c(14,28,42,56)
-sim <- 500
-b1 <- c(0,0.25)
-lambda_true <- runif(sim)
+nspp <- c(14,28,42,56) #species pool size
+sim <- 500 #number of iterations to be conducted
+b1 <- c(0,0.25) #True effect of SR
+lambda_true <- runif(sim) #500 true lambdas
 
 count <- 1 #number of iterations conducted (for checking progress)
 
 result_df <- NULL
 
-spaMM_formula <-  y~x1+corrMatrix(1|comp_id)
+spaMM_formula <-  y~x1+corrMatrix(1|comp_id) #formula used for the regression. See the documentation of ?fitme in EcoCoMix
 
 ### a for loop for simulations based on different scenarios.
-### This one takes time! So an R object containing the simulation results (sim500.Rdata) has been provided. You can skip to L63 if you don't want to run the simulation.
+### This one takes a long time! So an R object containing the simulation results (sim500.Rdata) has been provided.
+### You can go to L67 if you don't want to run the simulation.
 
 for (k in 1:length(b1)) { #slope
   for (i in 1:length(nspp)) { #species pool size
@@ -30,12 +34,12 @@ for (k in 1:length(b1)) { #slope
                                          nspp=nspp[[i]],
                                          nsite=88,
                                          min_richness=1,
-                                         max_richness= 4,
+                                         max_richness= 4, #local species richness = 1-4
                                          spaMM_formula=spaMM_formula,
                                          b1=b1[[k]],
                                          signals_X="sr", #species richness as the predictor
                                          noise_mean = 0,
-                                         noise_sd = 0.01,
+                                         noise_sd = 0.01, #very low noise
                                          lambda_true= lambda_true[[l]],
                                          conv_fail_drop = T, #drop runs with failed convergence
                                          scale_all=F, #no need to scale the predictor
@@ -61,6 +65,7 @@ for (k in 1:length(b1)) { #slope
     }
 
 ### you can also load sim500.Rdata and then run the script below
+# load("./Data/sim500.RData") loading the result
 all_result <- as.data.frame(do.call(rbind,result))
 
 summary_stat <- result_df %>%
@@ -133,7 +138,7 @@ p_power <- ggplot(power_df,aes(y=sig_count*100,x=nspp))+
 
 plot(p_power)
 
-### Making fig 1 - subpanel for rmse and me
+### Making fig 1 - subpanel for rmse and mean error
 coef_df_b1_0 <- result_df %>%
   dplyr::select(b1,nspp,m_optim_slope,m_true_slope,m_original_slope,m_best_slope,m_without_comp_slope) %>%
   pivot_longer(!b1:nspp,names_to="Model") %>%
@@ -203,8 +208,6 @@ Error_df_b1_0.25 <- coef_df_b1_0.25 %>%
   group_by(nspp,Model) %>%
   summarize(rmse = sqrt(mean((value-b1)^2)),
             me = mean(value-b1))
-
-library(see)
 
 p_ME_b1_0.25 <- ggplot(Error_df_b1_0.25,aes(y=me,x=nspp))+
   geom_line(aes(group=Model,colour=Model))+

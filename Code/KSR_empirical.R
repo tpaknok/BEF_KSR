@@ -1,4 +1,5 @@
-###This is the code for reproducing the results of the empirical analysis in the manuscript
+### This is the code for reproducing the results of the empirical analysis in the main text
+### Tsang, T. P. N. & Cadotte, M. W. (2025). Species overlap and phylogenetic relatedness result in community statistical non-independence (and what to do about it). Ecology Letters.
 ### For general usage, see the website of EcoCoMix https://tpaknok.github.io/EcoCoMix/articles/Empirical_single.html
 
 library(phytools)

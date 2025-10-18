@@ -1,15 +1,17 @@
+### This script is for reproducing the simulation results for the high-diversity scenario.
+### ### Tsang, T. P. N. & Cadotte, M. W. (2025). Species overlap and phylogenetic relatedness result in community statistical non-independence (and what to do about it). Ecology Letters.
+
 library(phytools)
 library(tidyverse)
 library(EcoCoMix)
 library(ape)
-library(BBmisc)
 
 ### Simulations - Initial settings
 set.seed(123)
-nspp <- 100
-sim <- 500
-b1 <- c(0,0.25)
-lambda_true <- runif(sim)
+nspp <- 100 #species pool size
+sim <- 500  #number of iterations to be conducted
+b1 <- c(0,0.25) #True effect of SR
+lambda_true <- runif(sim) #500 true lambdas
 
 count <- 1 #number of iterations conducted (for checking progress)
 
@@ -17,7 +19,8 @@ result_df <- NULL
 
 spaMM_formula <-  y~x1+corrMatrix(1|comp_id)
 
-### a for loop for simulations based on different scenarios. Skip to L71 if you directly loaded simSupp.RData
+### a for loop for simulations based on different scenarios.
+### Skip to L75 if you want to load simSupp.RData directly
 
 for (k in 1:length(b1)) { #slope
   for (i in 1:length(nspp)) { #species pool size
@@ -32,12 +35,12 @@ for (k in 1:length(b1)) { #slope
                                        nspp=nspp[[i]],
                                        nsite=88,
                                        min_richness=10,
-                                       max_richness= 50,
+                                       max_richness= 50, #local richness = 10-50
                                        spaMM_formula=spaMM_formula,
                                        b1=b1[[k]],
                                        signals_X="sr", #species richness as the predictor
                                        noise_mean = 0,
-                                       noise_sd = 0.01,
+                                       noise_sd = 0.01, #very small noise
                                        lambda_true= lambda_true[[l]],
                                        conv_fail_drop = T, #drop runs with failed convergence
                                        scale_all=F, #no need to scale the predictor
@@ -69,6 +72,8 @@ for (k in 1:length(b1)) { #slope
 }
 
 ### this is for producing Table S1. You can directly load simSupp.RData and run the summary here
+#load("./Data/simSupp.RData") load the results directly
+
 summary_stat <- result_df %>%
   dplyr::select(b1,nspp,m_optim_sig,m_true_sig,m_original_sig,m_best_sig,m_without_comp_sig) %>%
   pivot_longer(!b1:nspp,names_to="Model") %>%
@@ -85,7 +90,7 @@ coef_df_b1 <- result_df %>%
                             "Optimized model" = "m_optim_slope" ,
                             "Linear regression" = "m_without_comp_slope")
   ) %>%
-  mutate(Model = fct_relevel(Model,"True model","Optimized model","Brownian motion","Linear regression"))
+  mutate(Model = fct_relevel(Model,"True model","Optimized model","Brownian motion","Linear regression")) #obtain coefficient estimates in each iteration.
 
 coef_est_df <- coef_df_b1 %>%
   mutate(diff = value-b1) %>%
