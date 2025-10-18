@@ -62,7 +62,7 @@ KSR.csv (or run data(KSR) in R) describes the species composition of each plot (
 |<i>Solidago nemoralis</i>|SONE|
 
 ## Data - Phylogeny
-KSR_MLtree (or data(KSR_MLtree)) is a phylogeny tree containing the 14 species used in the experiment. 
+KSR_MLtree.tre (or data(KSR_MLtree)) is a phylogeny tree containing the 14 species used in the experiment. 
 
 ## Data - Ecosystem function
 KSR_EF.csv (or data(KSR_EF)) describes the ten ecosystem functions measured in the experiment. 
@@ -88,10 +88,10 @@ For the simulation, you can simply run the simulation scripts. However, this wil
 IF you don't want ot wait, you can load the results (sim500.RData or simSupp.Rdata) and obtain summary statistics.
 
 # Figure
-The folder contains all result figures included in the manuscript: p_coef(Figure S1), p_KSR (Figure 4), p_KSR_all(Figure S2), p_sim(Figure 3).
+The folder contains all result figures included in the manuscript: p_coef(Figure S1), p_KSR (Figure 4), p_KSR_all(Figure S2), p_sim (Figure 3). Note that the code to reproduce the figures is in the simulation and empirical analysis scripts.
 
 # Table
-The folder contains Table S2 (before formatting). Note that this is NOT the data.
+The folder contains Table S2 (before formatting). Note that this is NOT the data. The code for reproducing the table is in the empirical analysis script.  
 
 # Contact
 Toby Tsang (tpaknok@gmail.com)
