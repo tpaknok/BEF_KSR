@@ -6,7 +6,6 @@ library(phytools)
 library(tidyverse)
 library(EcoCoMix)
 library(ape)
-library(picante)
 
 data(KSR)
 data(KSR_MLtree)
@@ -35,9 +34,7 @@ get_predictions <- function(object) {
   predict_df <- rbind(predict_with_phylo,predict_without_phylo)
 }
 
-### get the phylogenetic vcv matrix
-KSR_EF$mpd <- picante::mpd(KSR,cophenetic(KSR_MLtree))
-KSR_EF[is.na(KSR_EF$mpd),"mpd"] <- 0
+### log-transform some variables
 
 KSR_EF$log_bugs <- log(KSR_EF$bugs+1)
 KSR_EF$log_flwr_total <- log(KSR_EF$flwr_total+1)
@@ -48,7 +45,8 @@ KSR_EF$log_poll_total <- log(KSR_EF$poll_total+1)
 resp <- c("litter2012","ave.biomass","LAI","mean.N.change","log_poll_total","log_flwr_total",
                   "Mass.loss.2month","Damage_effect","log_bugs","log_bug_rich")
 
-result_df <- predict_df_sr <- predict_df_mpd <- NULL
+result_df <- predict_df_sr <- NULL
+
 for (i in 1:10) {
   message(i)
   y <- KSR_EF[,resp[[i]]]
