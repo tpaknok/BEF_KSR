@@ -110,7 +110,7 @@ predict_df <- predict_df_sr %>% #restructure the predictions for plotting
                             "Soil nitrogen (ΔN)"))
 
 plot_data <- KSR_EF %>% #restructuring the raw data for plotting
-  select(Real.rich,litter2012,ave.biomass,LAI,mean.N.change,Mass.loss.2month,Damage_effect,log_bugs,log_flwr_total,log_bug_rich,log_poll_total) %>%
+  dplyr::select(Real.rich,litter2012,ave.biomass,LAI,mean.N.change,Mass.loss.2month,Damage_effect,log_bugs,log_flwr_total,log_bug_rich,log_poll_total) %>%
   pivot_longer(cols=litter2012:log_poll_total,names_to="Name",values_to="Value") %>%
   mutate(Name = fct_recode(Name,
                            "Biomass" = "ave.biomass",
