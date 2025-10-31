@@ -6,7 +6,8 @@ library(tidyverse)
 library(EcoCoMix)
 library(ape)
 
-### Simulations - Initial settings
+### Simulations ----
+#### Initial settings ----
 set.seed(123)
 nspp <- c(14,28,42,56) #species pool size
 sim <- 500 #number of iterations to be conducted
@@ -19,9 +20,10 @@ result_df <- NULL
 
 spaMM_formula <-  y~x1+corrMatrix(1|comp_id) #formula used for the regression. See the documentation of ?fitme in EcoCoMix
 
-### a for loop for simulations based on different scenarios.
-### This one takes a long time! So an R object containing the simulation results (sim500.Rdata) has been provided.
-### You can go to L67 if you don't want to run the simulation.
+#### For loop ----
+#### a for loop for simulations based on different scenarios
+#### This one takes a long time! So an R object containing the simulation results (sim500.Rdata) has been provided.
+#### You can go to L70-71 if you don't want to run the simulation.
 
 for (k in 1:length(b1)) { #slope
   for (i in 1:length(nspp)) { #species pool size
@@ -64,8 +66,9 @@ for (k in 1:length(b1)) { #slope
       }
     }
 
-### you can also load sim500.Rdata and then run the script below
-# load("./Data/sim500.RData") #loading the result
+#### Formatting the results ----
+#### you can also load sim500.Rdata and then run the script below
+#### load("./Data/sim500.RData") #loading the result
 all_result <- as.data.frame(do.call(rbind,result))
 
 summary_stat <- result_df %>%
@@ -74,20 +77,21 @@ summary_stat <- result_df %>%
   group_by(b1,nspp,Model) %>%
   summarize(sig_count = sum(value)/sim)
 
-### Making fig 1 - subpanel for type-I error
+###Figure 3 code  ----
+####Type-I error figs----
 dir.create("Figure")
 
 typeI_df <- summary_stat %>%
   filter(b1 == 0 & Model != "m_best_sig") %>%
   mutate(Model = fct_recode(Model,
-                            "True model" = "m_true_sig" ,
-                            "Brownian motion" = "m_original_sig" ,
-                            "Optimized model" = "m_optim_sig" ,
-                            "Linear regression" = "m_without_comp_sig")
+                            "True model" = "m_true_sig" ,#models using correct lambda
+                            "Brownian motion" = "m_original_sig" , #  lambda = 1
+                            "Optimized model" = "m_optim_sig" , # optimized lambda
+                            "Linear regression" = "m_without_comp_sig") #lm
   ) %>%
   mutate(Model = fct_relevel(Model,"True model","Optimized model","Brownian motion","Linear regression"))
 
-p_typeI <- ggplot(typeI_df,aes(y=sig_count*100,x=nspp))+
+p_typeI <- ggplot(typeI_df,aes(y=sig_count*100,x=nspp))+ #this one is for type I error
   geom_hline(yintercept=5)+
   geom_line(aes(group=Model,colour=Model))+
   ylab("Type I error (%)")+
@@ -107,7 +111,7 @@ p_typeI <- ggplot(typeI_df,aes(y=sig_count*100,x=nspp))+
 
 plot(p_typeI)
 
-### Making fig 1 - subpanel for power
+#### Power figs ----
 power_df <- summary_stat %>%
   filter(b1 == 0.25 & Model != "m_best_sig") %>%
   mutate(Model = fct_recode(Model,
@@ -118,7 +122,7 @@ power_df <- summary_stat %>%
   ) %>%
   mutate(Model = fct_relevel(Model,"True model","Optimized model","Brownian motion","Linear regression"))
 
-p_power <- ggplot(power_df,aes(y=sig_count*100,x=nspp))+
+p_power <- ggplot(power_df,aes(y=sig_count*100,x=nspp))+ #number of significant results * 100
   geom_hline(yintercept = 80)+
   geom_line(aes(group=Model,colour=Model))+
   ylab("Power (%)")+
@@ -138,7 +142,8 @@ p_power <- ggplot(power_df,aes(y=sig_count*100,x=nspp))+
 
 plot(p_power)
 
-### Making fig 1 - subpanel for rmse and mean error
+#### RMSE and mean error figs ----
+#### summarize results for simulations with b1 = 0
 coef_df_b1_0 <- result_df %>%
   dplyr::select(b1,nspp,m_optim_slope,m_true_slope,m_original_slope,m_best_slope,m_without_comp_slope) %>%
   pivot_longer(!b1:nspp,names_to="Model") %>%
@@ -155,10 +160,10 @@ library(see)
 
 Error_df_b1_0 <- coef_df_b1_0 %>%
   group_by(nspp,Model) %>%
-  summarize(rmse = sqrt(mean((value-b1)^2)),
+  summarize(rmse = sqrt(mean((value-b1)^2)), #value - b1 = differences with true b1 value.
             me = mean(value-b1))
 
-p_ME_b1_0 <- ggplot(Error_df_b1_0,aes(y=me,x=nspp))+
+p_ME_b1_0 <- ggplot(Error_df_b1_0,aes(y=me,x=nspp))+ #mean error graph when b1 = 0
   geom_line(aes(group=Model,colour=Model))+
   ylab("Bias (Mean Error)")+
   xlab("")+
@@ -175,7 +180,7 @@ p_ME_b1_0 <- ggplot(Error_df_b1_0,aes(y=me,x=nspp))+
         legend.title = element_text(size=12),
         strip.text = element_text(size=12))
 
-p_RMSE_b1_0 <- ggplot(Error_df_b1_0,aes(y=rmse,x=nspp))+
+p_RMSE_b1_0 <- ggplot(Error_df_b1_0,aes(y=rmse,x=nspp))+ #RMSE graph when b1=0
   geom_line(aes(group=Model,colour=Model))+
   ylab("Accuracy (RMSE)")+
   xlab("")+
@@ -192,6 +197,7 @@ p_RMSE_b1_0 <- ggplot(Error_df_b1_0,aes(y=rmse,x=nspp))+
         legend.title = element_text(size=12),
         strip.text = element_text(size=12))
 
+#### this one is for RMSE and ME when b1 = 0.25
 coef_df_b1_0.25 <- result_df %>%
   dplyr::select(b1,nspp,m_optim_slope,m_true_slope,m_original_slope,m_best_slope,m_without_comp_slope) %>%
   pivot_longer(!b1:nspp,names_to="Model") %>%
@@ -245,7 +251,7 @@ p_RMSE_b1_0.25 <- ggplot(Error_df_b1_0.25,aes(y=rmse,x=nspp))+
 
 plot(p_RMSE_b1_0.25)
 
-###combining them into one figure
+#### Combining all figs into Fig.3 ----
 library(ggpubr)
 
 ggarrange(p_typeI,p_power,
@@ -255,7 +261,8 @@ ggarrange(p_typeI,p_power,
 
 ggsave(("./Figure/p_sim.tiff"),width=17,height=17,dpi=600,units="cm",compression="lzw",bg="white")
 
-### visualizing coef estimates across simulations
+###Figure S1 code ----
+### Fig.S1 is for visualizing coef estimates across simulations
 p_coef_b1_0 <- ggplot(coef_df_b1_0,aes(y=value,x=nspp))+
   geom_hline(yintercept = 0)+
   geom_violinhalf(aes(group=interaction(Model,nspp),fill=Model),position=position_dodge(width=4),scale="width",

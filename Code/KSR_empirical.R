@@ -14,8 +14,8 @@ data(KSR_EF)
 ### a function to get prediction from spaMM models
 get_predictions <- function(object) {
   newdata <- data.frame(Real.rich=unique(object$best_model$data$Real.rich))
-  predict_with_phylo <- predict(object$best_model,newdata=newdata,re.form=NA,variances=list(fixefVar=TRUE),intervals="fixefVar",binding="Response")
-  predict_without_phylo <- predict(object$without_comp_model,newdata=newdata,re.form=NA,variances=list(fixefVar=TRUE),intervals="fixefVar",binding="Response")
+  predict_with_phylo <- predict(object$best_model,newdata=newdata,re.form=NA,variances=list(fixefVar=TRUE),intervals="fixefVar",binding="Response") #prediction with phylogeny
+  predict_without_phylo <- predict(object$without_comp_model,newdata=newdata,re.form=NA,variances=list(fixefVar=TRUE),intervals="fixefVar",binding="Response") #prediction from lm
 
   predict_with_phylo <- cbind(predict_with_phylo,
                               attr(predict_with_phylo,"intervals"),
@@ -34,14 +34,15 @@ get_predictions <- function(object) {
   predict_df <- rbind(predict_with_phylo,predict_without_phylo)
 }
 
-### log-transform some variables
+### Running EcoCoMix on ten ecosystem functions ----
+#### log-transform some variables ----
 
 KSR_EF$log_bugs <- log(KSR_EF$bugs+1)
 KSR_EF$log_flwr_total <- log(KSR_EF$flwr_total+1)
 KSR_EF$log_bug_rich <- log(KSR_EF$bug.rich+1)
 KSR_EF$log_poll_total <- log(KSR_EF$poll_total+1)
 
-### a for loop to analyze all functions
+#### a for loop to analyze all functions ----
 resp <- c("litter2012","ave.biomass","LAI","mean.N.change","log_poll_total","log_flwr_total",
                   "Mass.loss.2month","Damage_effect","log_bugs","log_bug_rich")
 
@@ -55,7 +56,7 @@ for (i in 1:10) {
                                      comm=KSR,
                                      VCV_sp = vcv(KSR_MLtree),
                                      method.spaMM="REML",
-                                     init=list())
+                                     init=list()) #Run EcoCoMix to identify best phylogenetic model
 
   assign(paste0("m_",resp[[i]]),m_sr)
 
@@ -78,10 +79,11 @@ for (i in 1:10) {
   predict_df_sr <- rbind(predict_df_sr,cbind(get_predictions(m_sr),resp=resp[[i]]))
 }
 
-### Visualize the results
+###Making figure 4 and S2 ----
+#### Restructuring the data ----
 dir.create("Figure")
 
-predict_df <- predict_df_sr %>%
+predict_df <- predict_df_sr %>% #restructure the predictions for plotting
   mutate(Name = as.factor(resp)) %>%
   mutate(Name = fct_recode(Name,
                             "Biomass" = "ave.biomass",
@@ -93,7 +95,7 @@ predict_df <- predict_df_sr %>%
                             "log(flower production+1)" = "log_flwr_total",
                             "log(pollinator abundance+1)" = "log_poll_total",
                             "Decomposition" = "Mass.loss.2month",
-                            "Soil nitrogen (Delta N)" =  "mean.N.change")
+                            "Soil nitrogen (ΔN)" =  "mean.N.change")
   ) %>%
   mutate(Name = fct_relevel(Name,
                             "Biomass",
@@ -105,9 +107,9 @@ predict_df <- predict_df_sr %>%
                             "log(arthropod abundance+1)",
                             "log(flower production+1)",
                             "log(pollinator abundance+1)",
-                            "Soil nitrogen (Delta N)"))
+                            "Soil nitrogen (ΔN)"))
 
-plot_data <- KSR_EF %>%
+plot_data <- KSR_EF %>% #restructuring the raw data for plotting
   select(Real.rich,litter2012,ave.biomass,LAI,mean.N.change,Mass.loss.2month,Damage_effect,log_bugs,log_flwr_total,log_bug_rich,log_poll_total) %>%
   pivot_longer(cols=litter2012:log_poll_total,names_to="Name",values_to="Value") %>%
   mutate(Name = fct_recode(Name,
@@ -120,9 +122,10 @@ plot_data <- KSR_EF %>%
                            "log(flower production+1)" = "log_flwr_total",
                            "log(pollinator abundance+1)" = "log_poll_total",
                            "Decomposition" = "Mass.loss.2month",
-                           "Soil nitrogen (Delta N)" =  "mean.N.change")) %>%
+                           "Soil nitrogen (ΔN)" =  "mean.N.change")) %>%
   filter(!(Real.rich == 1 & Name == "Damage reduction"))
 
+#### Figure 4 Code ----
 predict_df_subset <- subset(predict_df,Name == "Decomposition")
 plot_data_subset <- subset(plot_data,Name == "Decomposition")
 
@@ -152,6 +155,7 @@ p_KSR <- ggplot(predict_df_subset,aes(x=Real.rich,y=Response))+
 plot(p_KSR)
 ggsave(("Figure/p_KSR.tiff"),width=11,height=11,dpi=600,units="cm",compression="lzw")
 
+####  Figure S2 code ----
 p_KSR_all <- ggplot(predict_df,aes(x=Real.rich,y=Response))+
   geom_point(data=plot_data,aes(x=Real.rich,y=Value,group=Real.rich),position=position_dodge2(width=0.1))+
   geom_line(aes(colour=Model,linetype=Sig))+
@@ -173,52 +177,8 @@ plot(p_KSR_all)
 
 ggsave(("./Figure/p_KSR_all.tiff"),width=18,height=18,dpi=600,units="cm",compression="lzw")
 
-###
+###Table S1 code ----
 dir.create("Table")
-
-c(m_LAI$optimized_lambda_int,
-  m_litter2012$optimized_lambda_int,
-  m_mean.N.change$optimized_lambda_int,
-  m_Damage_effect$optimized_lambda_int,
-  m_ave.biomass$optimized_lambda_int,
-  m_Mass.loss.2month$optimized_lambda_int,
-  m_log_bug_rich$optimized_lambda_int,
-  m_log_bugs$optimized_lambda_int,
-  m_log_poll_total$optimized_lambda_int,
-  m_log_flwr_total$optimized_lambda_int)
-
-m_LAI$AIC[[1]]-m_LAI$AIC[[3]]
-m_litter2012$AIC[[1]]-m_litter2012$AIC[[3]]
-m_mean.N.change$AIC[[1]]-m_mean.N.change$AIC[[3]]
-m_Damage_effect$AIC[[1]]-m_Damage_effect$AIC[[3]]
-m_Mass.loss.2month$AIC[[1]]-m_Mass.loss.2month$AIC[[3]]
-m_ave.biomass$AIC[[1]]-m_ave.biomass$AIC[[3]]
-m_log_bug_rich$AIC[[1]]-m_log_bug_rich$AIC[[3]]
-m_log_bugs$AIC[[1]]-m_log_bugs$AIC[[3]]
-m_log_poll_total$AIC[[1]]-m_log_poll_total$AIC[[3]]
-m_log_flwr_total$AIC[[1]]-m_log_flwr_total$AIC[[3]]
-
-get_R2(m_LAI$best_model)
-get_R2(m_Damage_effect$best_model)
-get_R2(m_ave.biomass$best_model)
-get_R2(m_Mass.loss.2month$best_model)
-get_R2(m_log_bug_rich$best_model)
-get_R2(m_log_bugs$best_model)
-get_R2(m_log_poll_total$best_model)
-get_R2(m_log_flwr_total$best_model)
-
-m_LAI$AIC[[7]]-m_LAI$AIC[[6]]
-m_litter2012$AIC[[7]]-m_litter2012$AIC[[6]]
-m_mean.N.change$AIC[[7]]-m_mean.N.change$AIC[[6]]
-m_Damage_effect$AIC[[7]]-m_Damage_effect$AIC[[6]]
-m_Mass.loss.2month$AIC[[7]]-m_Mass.loss.2month$AIC[[6]]
-m_ave.biomass$AIC[[7]]-m_ave.biomass$AIC[[6]]
-m_log_bug_rich$AIC[[7]]-m_log_bug_rich$AIC[[6]]
-m_log_bugs$AIC[[7]]-m_log_bugs$AIC[[6]]
-m_log_poll_total$AIC[[7]]-m_log_poll_total$AIC[[6]]
-m_log_flwr_total$AIC[[7]]-m_log_flwr_total$AIC[[6]]
-
-### Table S1
 
 #As an example, summary(m_ave.biomass$optimized_lambda_model,verbose=F)$beta_table[2,1:2] extract the slope and SE
 #as.data.frame(m_ave.biomass$optimized_lambda_model_satt)[5:6] extract the Satterwaite's method p-value and F-value

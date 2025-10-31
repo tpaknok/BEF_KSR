@@ -79,16 +79,16 @@ measured in the experiment.
 |----|----|
 | Plot | Plot identity |
 | Real.rich | Number of species planted |
-| litter2012 | Amount of litter measured in 2012 |
-| ave.biomass | Average biomass across 2012-2014 |
+| litter2012 | Amount of litter measured in 2012 (g) |
+| ave.biomass | Average biomass across 2012-2014 (g) |
 | LAI | Leaf area index, a simplified dimension of structural complexity |
-| mean.N.change | delta 15N change averaged across surface and deep soil |
-| poll_total | Total number of pollinators |
+| mean.N.change | Changes in soil nitrogen (%) from June to August |
+| poll_total | Total number of pollinator individuals observed |
 | flwr_total | Total number of flowers |
-| Mass.loss.2month | Decomposition after 2 months |
-| Damage_effect | Damage reduction effect |
-| bugs | Total number of arthropods |
-| bug.rich | Species richness of arthropods |
+| Mass.loss.2month | Decomposition after 2 months (g) |
+| Damage_effect | Log response ratio of leaf damage in polyculture and monoculture. See Cadotte et al. 2017 |
+| bugs | Total number of arthropod individuals observed |
+| bug.rich | Species richness of arthropods observed |
 
 ## Simulation
 
@@ -111,11 +111,15 @@ The folder contains Table S2 (before formatting). Note that this is NOT
 the data. The code for reproducing the table is in the empirical
 analysis script.
 
-# Reference
+# References
 
-Tsang, T. P. N. & Cadotte, M. W. (2025). Species overlap and
+Tsang, T. P. N., & Cadotte, M. W. (2025). Species overlap and
 phylogenetic relatedness result in community statistical
 non-independence (and what to do about it). Ecology Letters.
+
+Cadotte, M. W., Livingstone, S. W., Yasui, S. L. E., Dinnage, R., Li, J.
+T., Marushia, R., Santangelo, J., & Shu, W. (2017). Explaining ecosystem
+multifunction with evolutionary models. Ecology, 98(12), 3175-3187.
 
 # Contact
 
