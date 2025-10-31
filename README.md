@@ -124,3 +124,7 @@ multifunction with evolutionary models. Ecology, 98(12), 3175-3187.
 # Contact
 
 Toby Tsang (<tpaknok@gmail.com>)
+
+\#Other info The code was run using RStudio 2025.09.1 Build 401 and R
+version 4.5.1 on Windows 11 x64 (build 26200). Please see
+sessionInfo.txt for all R packages used.
