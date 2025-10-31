@@ -1,10 +1,14 @@
 ### This script is for reproducing the simulation results described in the main text
 ### Tsang, T. P. N. & Cadotte, M. W. (2025). Species overlap and phylogenetic relatedness result in community statistical non-independence (and what to do about it). Ecology Letters.
 
+### Load packages ----
 library(phytools)
 library(tidyverse)
 library(EcoCoMix)
 library(ape)
+library(see)
+library(ggpubr)
+library(ggplot2)
 
 ### Simulations ----
 #### Initial settings ----
@@ -23,7 +27,7 @@ spaMM_formula <-  y~x1+corrMatrix(1|comp_id) #formula used for the regression. S
 #### For loop ----
 #### a for loop for simulations based on different scenarios
 #### This one takes a long time! So an R object containing the simulation results (sim500.Rdata) has been provided.
-#### You can go to L70-71 if you don't want to run the simulation.
+#### You can go to L73-74 if you don't want to run the simulation.
 
 for (k in 1:length(b1)) { #slope
   for (i in 1:length(nspp)) { #species pool size
@@ -156,7 +160,6 @@ coef_df_b1_0 <- result_df %>%
   ) %>%
   mutate(Model = fct_relevel(Model,"True model","Optimized model","Brownian motion","Linear regression"))
 
-library(see)
 
 Error_df_b1_0 <- coef_df_b1_0 %>%
   group_by(nspp,Model) %>%
@@ -252,8 +255,6 @@ p_RMSE_b1_0.25 <- ggplot(Error_df_b1_0.25,aes(y=rmse,x=nspp))+
 plot(p_RMSE_b1_0.25)
 
 #### Combining all figs into Fig.3 ----
-library(ggpubr)
-
 ggarrange(p_typeI,p_power,
           p_ME_b1_0,p_ME_b1_0.25,
           p_RMSE_b1_0,p_RMSE_b1_0.25,

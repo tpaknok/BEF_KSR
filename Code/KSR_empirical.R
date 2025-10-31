@@ -2,15 +2,6 @@
 ### Tsang, T. P. N. & Cadotte, M. W. (2025). Species overlap and phylogenetic relatedness result in community statistical non-independence (and what to do about it). Ecology Letters.
 ### For general usage, see the website of EcoCoMix https://tpaknok.github.io/EcoCoMix/articles/Empirical_single.html
 
-library(phytools)
-library(tidyverse)
-library(EcoCoMix)
-library(ape)
-
-data(KSR)
-data(KSR_MLtree)
-data(KSR_EF)
-
 ### a function to get prediction from spaMM models
 get_predictions <- function(object) {
   newdata <- data.frame(Real.rich=unique(object$best_model$data$Real.rich))
@@ -22,17 +13,28 @@ get_predictions <- function(object) {
                               data.frame(Name=attr(object$best_model$main_terms_info$Y,"respname")),
                               data.frame(Model="Best model"),
                               data.frame(Sig=ifelse(object$best_model_satt$`Pr(>F)`[[1]] < 0.05,"Sig","Insig"))
-                              )
+  )
 
   predict_without_phylo <- cbind(predict_without_phylo,
                                  attr(predict_without_phylo,"intervals"),
                                  data.frame(Name=attr(object$best_model$main_terms_info$Y,"respname")),
                                  data.frame(Model="Linear regression"),
                                  data.frame(Sig=ifelse(summary(object$without_comp_model,details=T,verbose=F)$beta_table[2,"p-value"] < 0.05,"Sig","Insig"))
-                                 )
+  )
 
   predict_df <- rbind(predict_with_phylo,predict_without_phylo)
 }
+
+### Load packages ----
+library(phytools)
+library(tidyverse)
+library(EcoCoMix)
+library(ape)
+
+### Load data from EcoCoMix ----
+data(KSR)
+data(KSR_MLtree)
+data(KSR_EF)
 
 ### Running EcoCoMix on ten ecosystem functions ----
 #### log-transform some variables ----

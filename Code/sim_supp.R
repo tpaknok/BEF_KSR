@@ -1,13 +1,14 @@
 ### This script is for reproducing the simulation results for the high-diversity scenario.
 ### ### Tsang, T. P. N. & Cadotte, M. W. (2025). Species overlap and phylogenetic relatedness result in community statistical non-independence (and what to do about it). Ecology Letters.
 
+### Load packages ----
 library(phytools)
 library(tidyverse)
 library(EcoCoMix)
 library(ape)
 library(BBmisc)
 
-### Simulations ----
+### Simulations (High diversity)----
 #### Initial settings ----
 set.seed(123)
 nspp <- 100 #species pool size
@@ -23,7 +24,7 @@ spaMM_formula <-  y~x1+corrMatrix(1|comp_id)
 
 #### For loop ----
 #### a for loop for simulations based on different scenarios.
-#### Skip to L77-78 if you want to load simSupp.RData directly
+#### Skip to L78-79 if you want to load simSupp.RData directly
 
 for (k in 1:length(b1)) { #slope
   for (i in 1:length(nspp)) { #species pool size
